@@ -8,6 +8,7 @@ import { Model } from 'mongoose';
 import { Tournament } from './tournament.schema';
 import { Game } from './game.schema';
 import { CreateTournamentDto } from './dto/create-tournament.dto';
+import { RpcService } from '../rpc/rpc.service';
 
 @Injectable()
 export class TournamentService {
@@ -18,32 +19,34 @@ export class TournamentService {
   constructor(
     private configService: ConfigService,
     private readonly jwtService: JwtService,
+    private readonly rpcService: RpcService,
     @InjectModel('Tournament') private readonly tournamentModel: Model<Tournament>,
     @InjectModel('Game') private readonly gameModel: Model<Game>,
     ) {
-    this.provider = new ethers.JsonRpcProvider(this.configService.get<string>('INFURA_URL'));
-    const wallet = new ethers.Wallet(this.configService.get<string>('PRIVATE_KEY'), this.provider);
-    this.contract = new ethers.Contract(this.configService.get<string>('CONTRACT_ADDRESS'), this.abi, wallet);
   }
 
   // Function to create a tournament
-  async createTournament(createTournamentDto: CreateTournamentDto):Promise<Tournament>{
+  async createTournament(createTournamentDto: CreateTournamentDto){
     const { gameType, entryFee, maxPlayers, startTime } = createTournamentDto;
+    let startTimeTimestamp =  Math.floor(Number(startTime)/1000);
     const game = await this.gameModel.findOne({ name: gameType }).exec();
     if (!game) {
       throw new Error('Game not found');
     }
+
+
+    const tournamentId = await this.rpcService.createTournament(entryFee, maxPlayers, startTimeTimestamp)
     const tournament = new this.tournamentModel({
       entryFee,
+      onchainId: tournamentId,
       maxPlayers,
-      startTime,
+      startTime: startTimeTimestamp,
       gameType,
       gameId: game._id,
     });
     // const tx = await this.contract.createTournament();
     return await tournament.save();
-    // await tx.wait();
-    // return 'Tournament Created';
+
   }
 
   // Function for users to join a tournament

@@ -15,7 +15,7 @@ const TournamentCreation = () => {
     console.error('User not authenticated');
     return;
   }
-
+  const startTimeTimestamp = new Date(startTime).getTime();
   try {
     const response = await axios.post(
       'http://localhost:5001/tournaments/create', 
@@ -23,7 +23,7 @@ const TournamentCreation = () => {
         entryFee,
         gameType,
         maxPlayers,
-        startTime
+        startTime: startTimeTimestamp,
       },
       {
         headers: {

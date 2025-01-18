@@ -8,4 +8,4 @@ import { RpcService } from './rpc.service';
   providers: [RpcService],
   exports: [RpcService],
 })
-export class UserModule {}
+export class RpcModule {}

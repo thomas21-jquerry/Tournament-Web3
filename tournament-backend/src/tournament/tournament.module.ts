@@ -7,6 +7,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { GameSchema } from './game.schema';
 import { UserModule } from 'src/user/user.module';
+import { RpcModule } from "../rpc/rpc.module"
 
 
 @Module({
@@ -23,7 +24,8 @@ import { UserModule } from 'src/user/user.module';
         signOptions: { expiresIn: '1h' },
       }),
     }),
-    UserModule
+    UserModule,
+    RpcModule,
   ],
   controllers: [TournamentController],
   providers: [TournamentService],
