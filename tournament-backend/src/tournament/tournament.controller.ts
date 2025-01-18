@@ -1,13 +1,19 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards } from '@nestjs/common';
+import { CreateTournamentDto } from './dto/create-tournament.dto';
 import { TournamentService } from './tournament.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator'; 
 
 @Controller('tournaments')
 export class TournamentController {
   constructor(private readonly tournamentService: TournamentService) {}
 
   @Post('create')
-  async createTournament(@Body() body: { entryFee: number, maxPlayers: number, startTime: number }) {
-    return this.tournamentService.createTournament(body.entryFee, body.maxPlayers, body.startTime);
+  @UseGuards(JwtAuthGuard, RolesGuard)  // Use both JwtAuthGuard and RolesGuard
+  @Roles('admin')
+  async createTournament(@Body() createTournamentDto: CreateTournamentDto) {
+    return this.tournamentService.createTournament(createTournamentDto);
   }
 
 //   @Post('join')

@@ -64,6 +64,10 @@ export class UserService {
     // Here you can create a session or JWT token and send it back to the client
     return { message: 'Signed in successfully', token };
   }
+  
+  async verifyAdmin(token: string): Promise<any>{
+
+  }
 
   async verifyJwt(token: string): Promise<any> {
     try {
