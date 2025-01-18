@@ -1,0 +1,24 @@
+// Example of sending the token in the Authorization header
+
+const createTournament = async (tournamentData) => {
+  const token = localStorage.getItem('jwt_token');
+  if (!token) {
+    console.error('User not authenticated');
+    return;
+  }
+
+  try {
+    const response = await axios.post(
+      'http://localhost:3000/tournaments/create', 
+      tournamentData, 
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,  // Send the token here
+        }
+      }
+    );
+    console.log(response.data);
+  } catch (err) {
+    console.error('Error creating tournament', err);
+  }
+};
