@@ -5,6 +5,7 @@ const TournamentCard = ({ tournament }) => {
   const navigate = useNavigate();  // Use useNavigate for navigation
 
   const handleClick = () => {
+    console.log(tournament.data, "list")
     // Navigate to the tournament detail page when the card is clicked
     navigate(`/tournament/${tournament.onchainId}`);
   };

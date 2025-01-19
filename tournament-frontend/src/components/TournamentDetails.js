@@ -72,7 +72,6 @@ const TournamentDetail = () => {
         setError('Failed to submit the score');
         setLoading(false);
       }
-      
   };
 
   useEffect(() => {

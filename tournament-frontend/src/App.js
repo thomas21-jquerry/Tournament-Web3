@@ -5,6 +5,7 @@ import { EthereumProvider } from './context/EthereumContext';
 import Navbar from './components/Navbar';
 import SignInWithEthereum from './components/SignInWithEthereum';
 import TournamentDetail from './components/TournamentDetails';
+import TournamentsListUser from './components/TournamentListUser';
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
           <Navbar /> 
           <Routes>
             {/* Correct usage of the element prop in React Router v6 */}
+            <Route path="/user-tournament" element={<TournamentsListUser />} />
             <Route path="/" element={<SignInWithEthereum />} />
             <Route path="/tournament/:id" element={<TournamentDetail />} />
           </Routes>

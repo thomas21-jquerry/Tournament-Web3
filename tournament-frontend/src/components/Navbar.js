@@ -28,7 +28,7 @@ const Navbar = () => {
           </>
         ) : (
           <>
-            <a href="/dashboard" style={styles.navLink}>Dashboard</a>
+            <a href="/user-tournament" style={styles.navLink}>Your Tournament</a>
             <span style={styles.navText}>Connected: {getShortenedAddress(address)}</span>
           </>
         )}

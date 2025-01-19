@@ -8,6 +8,7 @@ const TournamentCreation = () => {
   const [maxPlayers, setMaxPlayers] = useState('');
   const [startTime, setStartTime] = useState('');
   const [gameType, setGameType] = useState('1vN');
+  const [endTime, setEndTime] = useState('')
   const [error, setError] = useState('');
   const navigate = useNavigate();  // Initialize navigate hook
 
@@ -20,6 +21,7 @@ const TournamentCreation = () => {
     }
 
     const startTimeTimestamp = new Date(startTime).getTime();
+    const endTimeTimestamp = new Date(endTime).getTime();
     try {
       const response = await axios.post(
         'http://localhost:5001/tournaments/create', 
@@ -28,6 +30,7 @@ const TournamentCreation = () => {
           gameType,
           maxPlayers,
           startTime: startTimeTimestamp,
+          endTime: endTimeTimestamp,
         },
         {
           headers: {
@@ -88,6 +91,15 @@ const TournamentCreation = () => {
           type="datetime-local" 
           value={startTime} 
           onChange={(e) => setStartTime(e.target.value)} 
+        />
+      </label>
+      <br />
+      <label>
+        End Time:
+        <input 
+          type="datetime-local" 
+          value={endTime} 
+          onChange={(e) => setEndTime(e.target.value)} 
         />
       </label>
       <br />
