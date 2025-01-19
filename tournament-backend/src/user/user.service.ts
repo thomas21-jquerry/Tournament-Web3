@@ -53,7 +53,6 @@ export class UserService {
     const message = new SiweMessage(siweMessage);
     const address = message.address;
     let user = await this.getUserByAddress(address);
-    
 
     if (!user) {
       user = await this.createUser(address); // Create user if doesn't exist

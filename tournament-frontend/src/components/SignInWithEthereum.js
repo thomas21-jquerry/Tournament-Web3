@@ -112,7 +112,7 @@ const SignInWithEthereum = () => {
           setError('Error minting badge');
         }
       } else {
-        alert("Welcome to Arena! You have already received a badge.");
+        // alert("Welcome to Arena! You have already received a badge.");
       }
     };
 

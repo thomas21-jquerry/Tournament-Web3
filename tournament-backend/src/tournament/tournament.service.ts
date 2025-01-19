@@ -25,7 +25,7 @@ export class TournamentService {
     private readonly userService: UserService,
     @InjectModel('Tournament') private readonly tournamentModel: Model<Tournament>,
     @InjectModel('Game') private readonly gameModel: Model<Game>,
-    @InjectModel('Score') private readonly playerModel: Model<Player>,
+    @InjectModel('Player') private readonly playerModel: Model<Player>,
     ) {
   }
 
@@ -73,22 +73,23 @@ export class TournamentService {
   }
   
 
-  async getScore(tournamentId: Number, address: string ){
+  async getScore(tournamentId: string, address: string ){
     try{
       const user = await this.userService.getUserByAddress(address)
       if(!user || !tournamentId){
         throw new Error("address or tournamentId missing")
       }
-      const score = await this.playerModel.findOne({tournamentId, userId: user._id}).exec();
-      if(score === null){
+      console.log(tournamentId, user)
+      const player = await this.playerModel.findOne({tournamentId: tournamentId, userId: user._id}).exec();
+      if(player === null){
         return {
           status: false,
-          score: null
+          player: null
         }
       }
       return {
         status: true,
-        score
+        player
     }
 
     }catch(error){
@@ -107,9 +108,22 @@ export class TournamentService {
   }
 
   // Submit scores
-  async submitScore(tournamentId: number, score: number) {
-    const tx = await this.contract.submitScore(tournamentId, score);
-    await tx.wait();
+  async submitScore(tournamentId: number, playerAdd: string, score: number) {
+    const success = await this.rpcService.submitScore(tournamentId, playerAdd, score);
+    if (success){
+      const tournament = await this.tournamentModel.findOne({onchainId: tournamentId}).exec();
+      const user = await this.userService.getUserByAddress(playerAdd)
+      const player = await this.playerModel.findOne({ tournamentId: tournament._id, userId: user._id });
+      if (!player) {
+        throw new Error('Player not found');
+      }
+      player.score = score;
+      await player.save();
+      return {
+        status: true,
+        player
+      }
+    }
     return 'Score Submitted';
   }
 

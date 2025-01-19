@@ -5,12 +5,13 @@ import { useEthereum } from '../context/EthereumContext';
 import { ethers } from 'ethers';
 
 const TournamentDetail = () => {
-  const { id } = useParams();  // Get the tournament ID from the URL
-  const [tournament, setTournament] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [userIsParticipant, setUserIsParticipant] = useState(false);
-  const { signer, address, contract, isAdmin } = useEthereum();
+    const { id } = useParams();  // Get the tournament ID from the URL
+    const [tournament, setTournament] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+    const [userIsParticipant, setUserIsParticipant] = useState(false);
+    const [userScore, setUserScore] = useState('');  // State to store score input
+    const { signer, address, contract, isAdmin } = useEthereum();
 
   const handleJoinTournament = async()=>{
     try{
@@ -31,6 +32,49 @@ const TournamentDetail = () => {
     }
   }
 
+  const handleSubmitScore = async () => {
+    if (!userScore) {
+        alert('Please enter a score!');
+        return;
+      }
+  
+      try {
+        setLoading(true);
+        const token = localStorage.getItem('jwt_token');
+        if (!token) {
+          setError('User is not authenticated');
+          setLoading(false);
+          return;
+        }
+  
+        // API request to submit the score
+        const response = await axios.post(
+          `http://localhost:5001/tournaments/submit-score`,
+          { tournamentId: id,
+            player: address,
+            score: userScore },
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+          }
+        );
+  
+        if (response.status === 200) {
+          alert('Score submitted successfully!');
+          setUserScore(''); // Clear the input field after submission
+        } else {
+          alert('Failed to submit the score!');
+        }
+        setLoading(false);
+      } catch (err) {
+        console.error(err);
+        setError('Failed to submit the score');
+        setLoading(false);
+      }
+      
+  };
+
   useEffect(() => {
     const fetchTournamentDetails = async () => {
       try {
@@ -46,19 +90,24 @@ const TournamentDetail = () => {
             'Authorization': `Bearer ${token}`,
           }
         });
-        console.log(response.data.tournament)
-        const userIsInTournament = response.data.tournament.users.some(user => user.address === address);
-        setUserIsParticipant(userIsInTournament);
+        console.log(`http://localhost:5001/tournaments/user/${address}/tournament/${response.data.tournament._id}`, "here")
+        const playerResponse = await axios.get(`http://localhost:5001/tournaments/user/${address}/tournament/${response.data.tournament._id}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          }
+        });
+        // const userIsInTournament = response.data.tournament.users.some(user => user.address === address);
+        setUserIsParticipant(playerResponse.data.status);
         setTournament(response.data.tournament);  // Assuming the response contains the tournament details
         setLoading(false);
       } catch (err) {
-        setError('Failed to fetch tournament details.');
+        // setError('Failed to fetch tournament details.');
         setLoading(false);
       }
     };
 
     fetchTournamentDetails();
-  }, [id]);  // Re-run the effect when the tournament ID changes
+  }, [signer]);  // Re-run the effect when the tournament ID changes
 
   if (loading) {
     return <div>Loading tournament details...</div>;
@@ -74,6 +123,7 @@ const TournamentDetail = () => {
       {tournament && (
         <div>
           <p><strong>Tournament ID:</strong> {tournament.onchainId}</p>
+          <p><strong>Name:</strong> {tournament.name}</p>
           <p><strong>Entry Fee:</strong> {tournament.entryFee} ETH</p>
           <p><strong>Max Players:</strong> {tournament.maxPlayers}</p>
           <p><strong>Current Player Count:</strong> {tournament.curPlayers}</p>
@@ -83,7 +133,22 @@ const TournamentDetail = () => {
             <button onClick={handleJoinTournament}>Join Tournament</button>
           )}
 
-          {userIsParticipant && <p>You are already a participant in this tournament.</p>}
+          {userIsParticipant && tournament.isActive && (
+            <div>
+              <h3>Submit Your Score</h3>
+              <input
+                type="number"
+                value={userScore}
+                onChange={(e) => setUserScore(e.target.value)}
+                placeholder="Enter your score"
+              />
+              <button onClick={handleSubmitScore}>Submit Score</button>
+            </div>
+          )}
+
+          {userIsParticipant && !tournament.isActive && (
+            <p>The tournament has finished. You cannot submit scores anymore.</p>
+          )}
         </div>
       )}
     </div>

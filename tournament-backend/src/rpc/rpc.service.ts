@@ -57,6 +57,24 @@ export class RpcService {
         }
     }
 
+    async submitScore(tournamentId, player, score){
+        try{
+            console.log("started submit score transaction..")
+            const tx = await this.contract.submitScore(tournamentId, player, score);
+            const receipt = await tx.wait();
+            console.log("submit score transaction done")
+            if (receipt.status === 1) {
+                return true
+            }
+            else{
+                throw new Error("Transaction failed")
+            }
+        }catch(err){
+            console.log(err);
+            throw err;
+        }
+    }
+
     async getTournamentCount() {
         try {
             const count = await this.contract.tournamentCount();

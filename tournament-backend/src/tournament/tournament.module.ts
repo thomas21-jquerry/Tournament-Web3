@@ -16,7 +16,7 @@ import { PlayerSchema } from './player.schema';
     MongooseModule.forFeature([
       { name: 'Tournament', schema: TournamentSchema },
       {name: 'Game', schema: GameSchema},
-      {name: 'Score', schema: PlayerSchema}
+      {name: 'Player', schema: PlayerSchema}
     ],),
     JwtModule.registerAsync({
       imports: [],

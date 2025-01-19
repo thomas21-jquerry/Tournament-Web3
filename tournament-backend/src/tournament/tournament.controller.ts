@@ -28,15 +28,14 @@ export class TournamentController {
 
   @Get('user/:userAdd/tournament/:tournamentId')
   @UseGuards(JwtAuthGuard, RolesGuard) // Use both JwtAuthGuard and RolesGuard
-  @Roles('user') // Ensure only 'user' roles can access this endpoint
+  @Roles('user', 'admin') // Ensure only 'user' roles can access this endpoint
   async getScore(
     @Res() res: Response,
     @Param('userAdd') userAdd: string,
     @Param('tournamentId') tournamentId: string,
     ) {
     try{
-      const tournamentIdNum = Number(tournamentId)
-      const resp = await this.tournamentService.getScore(tournamentIdNum, userAdd);
+      const resp = await this.tournamentService.getScore(tournamentId, userAdd);
       res.status(HttpStatus.OK).json(resp);
     }catch(err){
       console.log(err);
@@ -45,8 +44,16 @@ export class TournamentController {
   }
 
   @Post('submit-score')
-  async submitScore(@Body() body: { tournamentId: number, score: number }) {
-    return this.tournamentService.submitScore(body.tournamentId, body.score);
+  async submitScore(
+    @Res() res: Response,
+    @Body() body: { tournamentId: number, player: string, score: number }) {
+    try{
+      const resp = this.tournamentService.submitScore(body.tournamentId, body.player, body.score);
+      res.status(HttpStatus.OK).json(resp)
+    }catch(err){
+      console.log(err);
+      res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Error submitting score', error: err.message });
+    }
   }
 
   @Post('finish')
