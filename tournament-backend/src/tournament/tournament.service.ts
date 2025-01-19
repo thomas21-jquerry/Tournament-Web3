@@ -8,6 +8,10 @@ import { Model } from 'mongoose';
 import { Tournament } from './tournament.schema';
 import { Game } from './game.schema';
 import { CreateTournamentDto } from './dto/create-tournament.dto';
+import { RpcService } from '../rpc/rpc.service';
+import { Player } from './player.schema';
+import { UserService } from 'src/user/user.service';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class TournamentService {
@@ -18,32 +22,102 @@ export class TournamentService {
   constructor(
     private configService: ConfigService,
     private readonly jwtService: JwtService,
+    private readonly rpcService: RpcService,
+    private readonly userService: UserService,
     @InjectModel('Tournament') private readonly tournamentModel: Model<Tournament>,
     @InjectModel('Game') private readonly gameModel: Model<Game>,
+    @InjectModel('Player') private readonly playerModel: Model<Player>,
     ) {
-    this.provider = new ethers.JsonRpcProvider(this.configService.get<string>('INFURA_URL'));
-    const wallet = new ethers.Wallet(this.configService.get<string>('PRIVATE_KEY'), this.provider);
-    this.contract = new ethers.Contract(this.configService.get<string>('CONTRACT_ADDRESS'), this.abi, wallet);
   }
 
   // Function to create a tournament
-  async createTournament(createTournamentDto: CreateTournamentDto):Promise<Tournament>{
-    const { gameType, entryFee, maxPlayers, startTime } = createTournamentDto;
+  async createTournament(createTournamentDto: CreateTournamentDto){
+    const { name, gameType, entryFee, maxPlayers, startTime, endTime } = createTournamentDto;
+    let endTimeTimestamp =  Math.floor(Number(endTime)/1000);
+    let startTimeTimestamp =  Math.floor(Number(startTime)/1000);
     const game = await this.gameModel.findOne({ name: gameType }).exec();
     if (!game) {
       throw new Error('Game not found');
     }
+
+
+    const tournamentId = await this.rpcService.createTournament(entryFee, maxPlayers, startTimeTimestamp)
     const tournament = new this.tournamentModel({
+      name,
       entryFee,
+      onchainId: tournamentId,
       maxPlayers,
-      startTime,
+      startTime: startTimeTimestamp,
+      endTime: endTimeTimestamp,
       gameType,
       gameId: game._id,
     });
-    // const tx = await this.contract.createTournament();
     return await tournament.save();
-    // await tx.wait();
-    // return 'Tournament Created';
+  }
+
+  async getTournaments(){
+    try{
+      const tournaments = await this.tournamentModel.find({}).exec();
+      return {status: true,tournaments};
+    }catch(error){
+      console.log(error);
+      throw error
+    }
+  }
+
+  async getUserTournaments(address: string){
+    try{
+      const user = await this.userService.getUserByAddress(address)
+      const players = await this.playerModel.find({ userId: user._id }).exec();
+  
+      // Create an array of promises to fetch tournaments
+      const tournamentPromises = players.map(async (player) => {
+        const tournament = await this.tournamentModel.findOne({ _id: player.tournamentId }).exec();
+        return tournament; // Return the tournament
+      });
+      
+      // Wait for all tournaments to be fetched
+      const tournaments = await Promise.all(tournamentPromises);
+      return {status: true, tournaments}
+    }catch(err){
+      console.log(err);
+      throw err;
+    }
+  }
+
+  async getTournament(id){
+    try{
+      const tournament = await this.tournamentModel.findOne({onchainId: id}).exec();
+      return {status: true,tournament};
+    }catch(error){
+      console.log(error);
+      throw error
+    }
+  }
+  
+
+  async getScore(tournamentId: string, address: string ){
+    try{
+      const user = await this.userService.getUserByAddress(address)
+      if(!user || !tournamentId){
+        throw new Error("address or tournamentId missing")
+      }
+      const player = await this.playerModel.findOne({tournamentId: tournamentId, userId: user._id}).exec();
+      if(player === null){
+        return {
+          status: false,
+          player: null
+        }
+      }
+      return {
+        status: true,
+        player
+    }
+
+    }catch(error){
+      console.log(error);
+      throw error
+    }
   }
 
   // Function for users to join a tournament
@@ -56,9 +130,22 @@ export class TournamentService {
   }
 
   // Submit scores
-  async submitScore(tournamentId: number, score: number) {
-    const tx = await this.contract.submitScore(tournamentId, score);
-    await tx.wait();
+  async submitScore(tournamentId: number, playerAdd: string, score: number) {
+    const success = await this.rpcService.submitScore(tournamentId, playerAdd, score);
+    if (success){
+      const tournament = await this.tournamentModel.findOne({onchainId: tournamentId}).exec();
+      const user = await this.userService.getUserByAddress(playerAdd)
+      const player = await this.playerModel.findOne({ tournamentId: tournament._id, userId: user._id });
+      if (!player) {
+        throw new Error('Player not found');
+      }
+      player.score = score;
+      await player.save();
+      return {
+        status: true,
+        player
+      }
+    }
     return 'Score Submitted';
   }
 
@@ -74,16 +161,48 @@ export class TournamentService {
     return await game.save();
   }
 
-  async verifyJwt(token: string): Promise<any> {
-    try {
-      // Verify the token using the JWT service
-      const decoded = this.jwtService.verify(token);
-
-      // If verification is successful, return the decoded token (payload)
-      return decoded;
-    } catch (error) {
-      // If the token is invalid or expired, throw an exception
-      throw new Error('Invalid or expired token');
+  async handleJoinTournament(tournamentId: number, address: string){
+    try{
+      const user = await this.userService.getUserByAddress(address);
+      const tournament = await this.tournamentModel.findOneAndUpdate(
+        { onchainId: tournamentId, isActive: true },
+        {
+          $push: { users: user._id },  
+          $inc: { curPlayers: 1 },    
+        },
+        { new: true }  
+      ).exec();
+      return tournament;
+    }catch(err){
+      throw err
     }
   }
+
+  @Cron(CronExpression.EVERY_30_MINUTES) 
+  async checkForExpiredTournaments() {
+    console.log('Checking for tournaments that have ended...');
+    try {
+      const currentTime = Math.floor(Date.now() / 1000); 
+    
+      const tournaments = await this.tournamentModel.find({
+        endTime: { $lte: currentTime }, 
+        isActive: true,
+      });
+      
+
+      // Process each expired tournament
+      for (const tournament of tournaments) {
+        console.log(`Tournament "${tournament.name}" has ended. Updating status...`);
+        const success = await this.rpcService.endTournament(tournament.onchainId);
+        tournament.isActive = false;
+        await tournament.save();
+
+        // Optionally, perform any other actions (like notifying users, handling scoring, etc.)
+        console.log(`Tournament "${tournament.name}" is now marked as ended.`);
+      }
+    } catch (error) {
+      console.error('Error in cron:', error);
+    }
+  }
+
 }

@@ -16,7 +16,7 @@ export const EthereumProvider = ({ children }) => {
   const [error, setError] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
 
-  const ADMIN_ADDRESS = process.env.REACT_APP_ADMIN_ADDRESS?.toLowerCase(); // Make sure it's lowercase
+  const ADMIN_ADDRESS = process.env.REACT_APP_ADMIN_ADDRESS?.toLowerCase();
 
   useEffect(() => {
     if (window.ethereum) {
@@ -31,7 +31,7 @@ export const EthereumProvider = ({ children }) => {
             // If already connected, set address and signer
             const tempSigner = await tempProvider.getSigner();
             setSigner(tempSigner);
-            setAddress(accounts[0]);
+            setAddress(ethers.getAddress(accounts[0]));
             initializeContract(tempSigner);
 
             // Check if the user is an admin
@@ -44,7 +44,7 @@ export const EthereumProvider = ({ children }) => {
             const tempSigner = await tempProvider.getSigner();
             const tempAddress = await tempSigner.getAddress();
             setSigner(tempSigner);
-            setAddress(tempAddress);
+            setAddress(ethers.getAddress(tempAddress));
             initializeContract(tempSigner);
 
             // Check if the user is an admin

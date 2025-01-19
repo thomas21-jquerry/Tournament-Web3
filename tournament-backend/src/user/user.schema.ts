@@ -7,10 +7,12 @@ export const UserSchema = new Schema({
     required: true, 
     enum: ['admin', 'user'],  // Only allow "admin" or "user"
     default: 'user'           // Set default role to 'user'
-  }
+  },
+  onchainId: {type: Number}
 });
 
 export interface User extends Document {
   address: string;
   role: 'admin' | 'user'; 
+  onchainId: number;
 }

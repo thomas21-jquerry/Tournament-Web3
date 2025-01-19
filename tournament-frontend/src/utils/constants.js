@@ -177,7 +177,14 @@ export const CONTRACT_ABI = [
 				"type": "uint256"
 			}
 		],
-		"name": "finishTournament",
+		"name": "joinTournament",
+		"outputs": [],
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "mintBadge",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -255,6 +262,25 @@ export const CONTRACT_ABI = [
 		"type": "event"
 	},
 	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "player",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "badgeId",
+				"type": "uint256"
+			}
+		],
+		"name": "BadgeMinted",
+		"type": "event"
+	},
+	{
 		"inputs": [
 			{
 				"internalType": "uint256",
@@ -262,20 +288,7 @@ export const CONTRACT_ABI = [
 				"type": "uint256"
 			}
 		],
-		"name": "joinTournament",
-		"outputs": [],
-		"stateMutability": "payable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "to",
-				"type": "address"
-			}
-		],
-		"name": "mintBadge",
+		"name": "finishTournament",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -400,6 +413,11 @@ export const CONTRACT_ABI = [
 				"internalType": "uint256",
 				"name": "_tournamentId",
 				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "player",
+				"type": "address"
 			},
 			{
 				"internalType": "uint256",
@@ -538,6 +556,25 @@ export const CONTRACT_ABI = [
 				"internalType": "address",
 				"name": "",
 				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "hasReceivedBadge",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
 			}
 		],
 		"stateMutability": "view",
@@ -849,4 +886,4 @@ export const CONTRACT_ABI = [
 	}
 ];
 
-export const CONTRACT_ADDRESS = "0xd9145CCE52D386f254917e481eB44e9943F39138";
+export const CONTRACT_ADDRESS = "0x3a9C7F77B383b00937C8704c61675D4463420Bd8";
