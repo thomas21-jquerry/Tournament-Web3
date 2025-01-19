@@ -14,7 +14,7 @@ export class UserService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async createUser(address: string, ): Promise<User> {
+  async createUser(address: string,): Promise<User> {
     const user = new this.userModel({ address });
     return await user.save();
   }
@@ -51,7 +51,7 @@ export class UserService {
     }
 
     const message = new SiweMessage(siweMessage);
-    const address = message.address.toLowerCase();
+    const address = message.address;
     let user = await this.getUserByAddress(address);
     
 
@@ -64,9 +64,18 @@ export class UserService {
     // Here you can create a session or JWT token and send it back to the client
     return { message: 'Signed in successfully', token };
   }
-  
-  async verifyAdmin(token: string): Promise<any>{
 
+  async handleNewUserBadgeMint(address: string, onchainId: number){
+    let user;
+    user = await this.userModel.findOne({address}).exec()
+    if(!user){
+      user = new this.userModel({ address, onchainId });
+      await user.save()
+    }else{
+      user.onchainId = onchainId
+      await user.save()
+    }
+    return user;
   }
 
   async verifyJwt(token: string): Promise<any> {
@@ -77,23 +86,9 @@ export class UserService {
       // If verification is successful, return the decoded token (payload)
       return decoded;
     } catch (error) {
-      // If the token is invalid or expired, throw an exception
+
       throw new Error('Invalid or expired token');
     }
   }
-
-  // async getNonce(request: Request) {
-  //   const { searchParams } = new URL(request.url);
-  //   const address = searchParams.get("address");
-  
-  //   if (!address) {
-  //     throw new Error("Invalid address");
-  //   }
-  //   const nonce = randomBytes(16).toString("hex");
-  //   addressMap.set(address, nonce);
-  //   return Response.json({
-  //     data: nonce,
-  //   });
-
 
 }

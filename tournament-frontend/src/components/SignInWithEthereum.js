@@ -3,6 +3,8 @@ import { useEthereum } from '../context/EthereumContext';
 import axios from 'axios';
 import { SiweMessage } from 'siwe';
 import TournamentCreation from './TournamentCreation';
+import TournamentsList from './TournamentList';
+import { ethers } from 'ethers';
 
 const SignInWithEthereum = () => {
   const { signer, address, contract, isAdmin } = useEthereum();
@@ -13,7 +15,8 @@ const SignInWithEthereum = () => {
 
   useEffect(() => {
     if (address) {
-      const message1 = createSiweMessage(address, 'Sign in with Ethereum to the app.');
+      const checksummedAddress = ethers.getAddress(address);
+      const message1 = createSiweMessage(checksummedAddress, 'Sign in with Ethereum to the app.');
       setMessage(message1);
     }
   }, [address]);
@@ -109,7 +112,7 @@ const SignInWithEthereum = () => {
           setError('Error minting badge');
         }
       } else {
-        alert("You have already received a badge.");
+        alert("Welcome to Arena! You have already received a badge.");
       }
     };
 
@@ -118,11 +121,22 @@ const SignInWithEthereum = () => {
     }
   }, [isAuthenticated]);
 
+  useEffect(()=>{
+    if (!isAuthenticated) {
+      const token = localStorage.getItem('jwt_token');
+      console.log(token, signer, isAdmin)
+      if( signer && token){
+        setIsAuthenticated(true)
+      }
+    }
+  },[signer])
+
   return (
     <div>
       {!isAuthenticated && <button onClick={handleSignMessage}>Sign Message</button>}
       {error && <p style={{ color: 'red' }}>{error}</p>}
       {isAuthenticated && isAdmin && <div><TournamentCreation /></div>}
+      {isAuthenticated && !isAdmin && <TournamentsList/>}
     </div>
   );
 };

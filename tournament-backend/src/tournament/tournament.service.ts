@@ -9,6 +9,8 @@ import { Tournament } from './tournament.schema';
 import { Game } from './game.schema';
 import { CreateTournamentDto } from './dto/create-tournament.dto';
 import { RpcService } from '../rpc/rpc.service';
+import { Player } from './player.schema';
+import { UserService } from 'src/user/user.service';
 
 @Injectable()
 export class TournamentService {
@@ -20,14 +22,16 @@ export class TournamentService {
     private configService: ConfigService,
     private readonly jwtService: JwtService,
     private readonly rpcService: RpcService,
+    private readonly userService: UserService,
     @InjectModel('Tournament') private readonly tournamentModel: Model<Tournament>,
     @InjectModel('Game') private readonly gameModel: Model<Game>,
+    @InjectModel('Score') private readonly playerModel: Model<Player>,
     ) {
   }
 
   // Function to create a tournament
   async createTournament(createTournamentDto: CreateTournamentDto){
-    const { gameType, entryFee, maxPlayers, startTime } = createTournamentDto;
+    const { name, gameType, entryFee, maxPlayers, startTime } = createTournamentDto;
     let startTimeTimestamp =  Math.floor(Number(startTime)/1000);
     const game = await this.gameModel.findOne({ name: gameType }).exec();
     if (!game) {
@@ -37,6 +41,7 @@ export class TournamentService {
 
     const tournamentId = await this.rpcService.createTournament(entryFee, maxPlayers, startTimeTimestamp)
     const tournament = new this.tournamentModel({
+      name,
       entryFee,
       onchainId: tournamentId,
       maxPlayers,
@@ -44,9 +49,52 @@ export class TournamentService {
       gameType,
       gameId: game._id,
     });
-    // const tx = await this.contract.createTournament();
     return await tournament.save();
+  }
 
+  async getTournaments(){
+    try{
+      const tournaments = await this.tournamentModel.find({}).exec();
+      return {status: true,tournaments};
+    }catch(error){
+      console.log(error);
+      throw error
+    }
+  }
+
+  async getTournament(id){
+    try{
+      const tournament = await this.tournamentModel.findOne({onchainId: id}).exec();
+      return {status: true,tournament};
+    }catch(error){
+      console.log(error);
+      throw error
+    }
+  }
+  
+
+  async getScore(tournamentId: Number, address: string ){
+    try{
+      const user = await this.userService.getUserByAddress(address)
+      if(!user || !tournamentId){
+        throw new Error("address or tournamentId missing")
+      }
+      const score = await this.playerModel.findOne({tournamentId, userId: user._id}).exec();
+      if(score === null){
+        return {
+          status: false,
+          score: null
+        }
+      }
+      return {
+        status: true,
+        score
+    }
+
+    }catch(error){
+      console.log(error);
+      throw error
+    }
   }
 
   // Function for users to join a tournament
@@ -77,16 +125,20 @@ export class TournamentService {
     return await game.save();
   }
 
-  async verifyJwt(token: string): Promise<any> {
-    try {
-      // Verify the token using the JWT service
-      const decoded = this.jwtService.verify(token);
-
-      // If verification is successful, return the decoded token (payload)
-      return decoded;
-    } catch (error) {
-      // If the token is invalid or expired, throw an exception
-      throw new Error('Invalid or expired token');
+  async handleJoinTournament(tournamentId: number, address: string){
+    try{
+      const user = await this.userService.getUserByAddress(address);
+      const tournament = await this.tournamentModel.findOneAndUpdate(
+        { onchainId: tournamentId, isActive: true },
+        {
+          $push: { users: user._id },  
+          $inc: { curPlayers: 1 },    
+        },
+        { new: true }  
+      ).exec();
+      return tournament;
+    }catch(err){
+      throw err
     }
   }
 }

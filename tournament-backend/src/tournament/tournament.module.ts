@@ -8,13 +8,15 @@ import { JwtModule } from '@nestjs/jwt';
 import { GameSchema } from './game.schema';
 import { UserModule } from 'src/user/user.module';
 import { RpcModule } from "../rpc/rpc.module"
+import { PlayerSchema } from './player.schema';
 
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: 'Tournament', schema: TournamentSchema },
-      {name: 'Game', schema: GameSchema}
+      {name: 'Game', schema: GameSchema},
+      {name: 'Score', schema: PlayerSchema}
     ],),
     JwtModule.registerAsync({
       imports: [],
@@ -29,5 +31,6 @@ import { RpcModule } from "../rpc/rpc.module"
   ],
   controllers: [TournamentController],
   providers: [TournamentService],
+  exports: [TournamentService],
 })
 export class TournamentModule {}
