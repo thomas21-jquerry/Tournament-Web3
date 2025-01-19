@@ -8,10 +8,11 @@ export const TournamentSchema = new Schema({
   maxPlayers: { type: Number, required: true },
   curPlayers: {type: Number, default: 0},
   startTime: { type: Number, required: true },
+  endTime: { type: Number, required: true },
   gameType: { type: String, required: true }, // You can link this to the Game Schema if needed
   gameId: { type: Schema.Types.ObjectId, ref: 'Game', required: true }, // Reference to Game model
   isActive: { type: Boolean, default: true },
-  users: [{ type: Schema.Types.ObjectId, ref: 'User' }]  // Add users as an array of references to the User model
+  users: [{ type: Schema.Types.ObjectId, ref: 'User' }],
 }, { timestamps: true });
 
 // Tournament Interface
@@ -22,6 +23,7 @@ export interface Tournament extends Document {
   maxPlayers: number;
   curPlayers: number
   startTime: number;
+  endTime: number;
   gameType: string;
   gameId: string;
   isActive: boolean;

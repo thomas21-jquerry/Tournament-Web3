@@ -13,6 +13,9 @@ export class CreateTournamentDto {
   @IsDate()
   startTime: Date;
 
+  @IsDate()
+  endTime: Date;
+
   @IsString()
   gameType: string;
 

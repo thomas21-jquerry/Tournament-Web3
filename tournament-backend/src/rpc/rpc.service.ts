@@ -85,6 +85,22 @@ export class RpcService {
         }
     }
 
+    async endTournament(tournamentId: number) {
+        try{
+            const tx = await this.contract.finishTournament(tournamentId);
+            const receipt = await tx.wait();
+            if (receipt.status === 1) {
+                return true
+            }
+            else{
+                throw new Error(`Transaction failed to end tournament with onchian id:${tournamentId}` )
+            }
+        }catch(err){
+            console.log(err);
+            throw err;
+        }
+    }
+
     async onModuleDestroy() {
         // Clean up when module is destroyed (unsubscribe)
         if (this.contract) {
