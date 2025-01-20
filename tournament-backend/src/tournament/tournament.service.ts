@@ -120,6 +120,26 @@ export class TournamentService {
     }
   }
 
+  async getScoreTournament(id: string, add: string){
+    try{
+      // const user = await this.userService.getUserByAddress(add);
+      const players = await this.playerModel
+      .find({ tournamentId: id })
+      .populate('userId', 'address role onchainId')
+      .sort({ score: -1 })
+      .exec();
+     
+      return {
+        status: true,
+        players,
+
+    }
+    }catch(err){
+      console.log(err);
+      throw err;
+    }
+  }
+
   // Function for users to join a tournament
   async joinTournament(tournamentId: number, entryFee: number) {
     const tx = await this.contract.joinTournament(tournamentId, {

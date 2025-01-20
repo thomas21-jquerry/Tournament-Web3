@@ -14,14 +14,14 @@ const TournamentsList = () => {
         const token = localStorage.getItem('jwt_token');
         if (!token) {
           console.error('User not authenticated');
-          setError('jwt do not exist')
+          setError('JWT token does not exist');
           return;
         }
 
         const response = await axios.get('http://localhost:5001/tournaments', {
-            headers: {
-              'Authorization': `Bearer ${token}`,  // Add the token here
-            }
+          headers: {
+            'Authorization': `Bearer ${token}`, // Add the token here
+          }
         });
         
         setTournaments(response.data.tournaments);
@@ -36,15 +36,15 @@ const TournamentsList = () => {
   }, []);
 
   if (loading) {
-    return <div>Loading tournaments...</div>;
+    return <div style={styles.loading}>Loading tournaments...</div>;
   }
 
   if (error) {
-    return <div style={{ color: 'red' }}>{error}</div>;
+    return <div style={styles.error}>{error}</div>;
   }
 
   return (
-    <div>
+    <div style={styles.container}>
       <div style={styles.tournamentsContainer}>
         {tournaments.map((tournament) => (
           <div style={styles.cardContainer} key={tournament.onchainId}>
@@ -57,6 +57,21 @@ const TournamentsList = () => {
 };
 
 const styles = {
+  container: {
+    backgroundColor: '#f0f4f8', // Light background for the overall container
+    minHeight: '100vh',
+    padding: '20px', // Add some padding around the whole page
+  },
+  loading: {
+    textAlign: 'center',
+    fontSize: '20px',
+    color: '#888',
+  },
+  error: {
+    textAlign: 'center',
+    fontSize: '20px',
+    color: 'red',
+  },
   tournamentsContainer: {
     display: 'flex',
     flexWrap: 'wrap', // Allow wrapping of items
@@ -68,6 +83,12 @@ const styles = {
     flex: '1 1 calc(33.33% - 20px)', // 3 cards in a row with gap
     boxSizing: 'border-box', // Ensure that padding doesn't affect width
     marginBottom: '20px', // Optional: space below each card
+    backgroundColor: '#ffffff', // White background for each card
+    borderRadius: '10px', // Rounded corners for the cards
+    boxShadow: '0 2px 6px rgba(0, 0, 0, 0.1)', // Subtle shadow for the card
+    overflow: 'hidden', // Ensure the rounded corners are respected
+    minWidth: 'calc(33.33% - 20px)', // Ensure that the card doesn't shrink smaller than 1/3 of the container
+    maxWidth: 'calc(33.33% - 20px)', // Ensure that the card doesn't grow beyond 1/3 of the container
   },
 };
 

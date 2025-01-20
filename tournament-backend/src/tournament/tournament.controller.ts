@@ -106,4 +106,22 @@ export class TournamentController {
       res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Error getting tournaments of a user', error: err.message });
     }
   }
+
+  @Get('/:id/user/:add')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('user', 'admin')
+  async getScoreTournament(
+    @Res() res: Response,
+    @Param('id') id: string,
+    @Param('add') add: string,
+    ) {
+    try{
+      const resp = await this.tournamentService.getScoreTournament(id, add);
+      res.status(HttpStatus.OK).json(resp);
+    }catch(err){
+      console.log(err);
+      res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Error getting tournaments score', error: err.message });
+    }
+  }
+
 }
